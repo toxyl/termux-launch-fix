@@ -17,6 +17,34 @@ const (
 	EXIT_SCRIPT_CREATE_FAILED = 102
 )
 
+func getHomeDir() string {
+	homePath, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Printf("Failed to get home dir path: %v\n", err)
+		os.Exit(EXIT_NO_HOME)
+	}
+	return homePath
+}
+
+func getProotPath() string {
+	prootPath, err := exec.LookPath("proot")
+	if err != nil {
+		fmt.Printf("`proot` not found - install with `pkg install proot`\n")
+		os.Exit(EXIT_NO_PROOT)
+	}
+	return prootPath
+}
+
+func saveStartScript(f *flo.FileObj, execPath, prootPath string) {
+	if err := f.StoreString(makeStartScript(execPath, prootPath)); err != nil {
+		fmt.Printf("Could not create start script: %s.\n", err.Error())
+		os.Exit(EXIT_SCRIPT_CREATE_FAILED)
+	}
+	f.PermExec(true, false, false)
+
+	fmt.Printf("\nI created a script for you that you will need to run once to initialize everything:\n %s\n\nOnce you have done that you can simply run the app with `%s`", strings.Join(append([]string{"./$HOME/" + f.Name()}, os.Args[1:]...), " "), f.Name())
+}
+
 func init() {
 	if runtime.GOOS == "android" && os.Getenv("TERMUX_VERSION") != "" {
 		// An Android, using Termux, the os.Args property contains an additional argument at the front.
@@ -25,36 +53,13 @@ func init() {
 			os.Args = os.Args[1:]
 		}
 
-		prefix := os.Getenv("PREFIX")
-		if prefix == "" {
-			prefix = "/data/data/com.termux/files/usr"
-		}
-
 		execPath := os.Args[0]
-
-		homePath, err := os.UserHomeDir()
-		if err != nil {
-			fmt.Printf("Failed to get home dir path: %v\n", err)
-			os.Exit(EXIT_NO_HOME)
-		}
+		homePath := getHomeDir()
 		scriptPath := filepath.Join(homePath, filepath.Base(execPath)+".proot")
 		startScript := flo.File(scriptPath)
 
 		if !startScript.Exists() {
-			prootPath, err := exec.LookPath("proot")
-			if err != nil {
-				fmt.Printf("`proot` not found - install with `pkg install proot`\n")
-				os.Exit(EXIT_NO_PROOT)
-			}
-
-			if err := startScript.StoreString(fmt.Sprintf("#!/bin/bash\nif [ ! -f \"%s.bin\" ]; then\n  mv \"%s\" \"%s.bin\"\n  echo '#!/bin/bash' > \"%s\"\n  echo '%s -b $PREFIX/etc/resolv.conf:/etc/resolv.conf \"%s.bin\" \"$@\"' >> \"%s\"\n  chmod +x \"%s\"\nfi\n\"%s.bin\" \"$@\"\n", execPath, execPath, execPath, execPath, prootPath, execPath, execPath, execPath, execPath)); err != nil {
-				fmt.Printf("Could not create start script: %s.\n", err.Error())
-				os.Exit(EXIT_SCRIPT_CREATE_FAILED)
-			}
-
-			startScript.PermExec(true, false, false)
-
-			fmt.Printf("\nCreated a start script for you. Run the app like this:\n %s\n", strings.Join(append([]string{startScript.Name()}, os.Args[1:]...), " "))
+			saveStartScript(startScript, execPath, getProotPath())
 			os.Exit(0)
 		}
 	}
