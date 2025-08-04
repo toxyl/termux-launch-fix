@@ -47,7 +47,7 @@ func init() {
 				os.Exit(EXIT_NO_PROOT)
 			}
 
-			if err := startScript.StoreString(fmt.Sprintf("#!/bin/bash\n%s -b $PREFIX/etc/resolv.conf:/etc/resolv.conf %s $@\n", prootPath, execPath)); err != nil {
+			if err := startScript.StoreString(fmt.Sprintf("#!/bin/bash\nif [ ! -f \"%s.bin\" ]; then\n  mv \"%s\" \"%s.bin\"\n  echo '#!/bin/bash' > \"%s\"\n  echo '%s -b $PREFIX/etc/resolv.conf:/etc/resolv.conf \"%s.bin\" \"$@\"' >> \"%s\"\n  chmod +x \"%s\"\nfi\n\"%s.bin\" \"$@\"\n", execPath, execPath, execPath, execPath, prootPath, execPath, execPath, execPath, execPath)); err != nil {
 				fmt.Printf("Could not create start script: %s.\n", err.Error())
 				os.Exit(EXIT_SCRIPT_CREATE_FAILED)
 			}
