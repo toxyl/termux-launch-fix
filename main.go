@@ -42,7 +42,7 @@ func saveStartScript(f *flo.FileObj, execPath, prootPath string) {
 	}
 	f.PermExec(true, false, false)
 
-	fmt.Printf("\nI created a script for you that you will need to run once to initialize everything:\n %s\n\nOnce you have done that you can simply run the app with `%s`", strings.Join(append([]string{"./$HOME/" + f.Name()}, os.Args[1:]...), " "), f.Name())
+	fmt.Printf("\n\nI created a script for you that you will need to run once to initialize everything:\n %s\n\nOnce you have done that you can simply run the app with `%s`\n\n", strings.Join(append([]string{"./$HOME/" + f.Name()}, os.Args[1:]...), " "), f.Name())
 }
 
 func init() {
@@ -54,6 +54,10 @@ func init() {
 		}
 
 		execPath := os.Args[0]
+		if strings.HasSuffix(execPath, ".bin") {
+			// this is already running via our start script
+			return
+		}
 		homePath := getHomeDir()
 		scriptPath := filepath.Join(homePath, filepath.Base(execPath)+".proot")
 		startScript := flo.File(scriptPath)
