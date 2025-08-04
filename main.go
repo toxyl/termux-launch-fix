@@ -42,7 +42,7 @@ func saveStartScript(f *flo.FileObj, execPath, prootPath string) {
 	}
 	f.PermExec(true, false, false)
 
-	fmt.Printf("\n\nI created a script for you that you will need to run once to initialize everything:\n %s\n\nOnce you have done that you can simply run the app with `%s`\n\n", strings.Join(append([]string{"./$HOME/" + f.Name()}, os.Args[1:]...), " "), f.Name())
+	fmt.Printf("\n\nI created a script for you that you will need to run once to initialize everything:\n %s\n\nOnce you have done that you can simply run the app with `%s`\n\n\n", strings.Join(append([]string{"./$HOME/" + f.Name()}, os.Args[1:]...), " "), strings.TrimSuffix(f.Name(), ".proot"))
 }
 
 func init() {
